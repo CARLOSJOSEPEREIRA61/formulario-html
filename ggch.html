@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Reserva de Hotel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2f7;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg border-t-4 border-blue-500">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-4">Fazer uma Reserva</h2>
+        <p class="text-center text-gray-600 mb-8">Preencha os detalhes para sua reserva de quarto.</p>
+
+        <form id="bookingForm" class="space-y-6">
+            <div>
+                <label for="checkInDate" class="block text-sm font-medium text-gray-700 mb-1">Data de Check-in</label>
+                <input type="date" id="checkInDate" name="checkInDate" required
+                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+
+            <div>
+                <label for="checkOutDate" class="block text-sm font-medium text-gray-700 mb-1">Data de Check-out</label>
+                <input type="date" id="checkOutDate" name="checkOutDate" required
+                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+
+            <div>
+                <label for="uhType" class="block text-sm font-medium text-gray-700 mb-1">Tipo de UH</label>
+                <select id="uhType" name="uhType" required
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="">Selecione o tipo de UH</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Luxo">Luxo</option>
+                    <option value="Suíte">Suíte</option>
+                    <option value="Familiar">Familiar</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">Origem da Reserva</label>
+                <select id="origin" name="origin" required
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="">Selecione a origem</option>
+                    <option value="Site Direto">Site Direto</option>
+                    <option value="Booking.com">Booking.com</option>
+                    <option value="Expedia">Expedia</option>
+                    <option value="Agência de Viagens">Agência de Viagens</option>
+                    <option value="Telefone">Telefone</option>
+                    <option value="Walk-in">Walk-in</option>
+                </select>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit"
+                        class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out transform hover:scale-105">
+                    Confirmar Reserva
+                </button>
+            </div>
+        </form>
+
+        <div id="statusMessage" class="mt-6 p-3 rounded-md text-center text-sm font-medium hidden"></div>
+    </div>
+
+    <script>
+        const checkInDateInput = document.getElementById('checkInDate');
+        const checkOutDateInput = document.getElementById('checkOutDate');
+        const statusMessage = document.getElementById('statusMessage');
+
+        function formatDateToYYYYMMDD(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const todayString = formatDateToYYYYMMDD(today);
+            checkInDateInput.setAttribute('min', todayString);
+            checkOutDateInput.setAttribute('min', todayString);
+        });
+
+        checkInDateInput.addEventListener('input', () => {
+            const checkInValue = checkInDateInput.value;
+            if (checkInValue) {
+                const checkInDate = new Date(checkInValue + 'T00:00:00');
+                const nextDay = new Date(checkInDate);
+                nextDay.setDate(checkInDate.getDate() + 1);
+                const nextDayString = formatDateToYYYYMMDD(nextDay);
+                checkOutDateInput.setAttribute('min', nextDayString);
+
+                if (checkOutDateInput.value && new Date(checkOutDateInput.value + 'T00:00:00') <= checkInDate) {
+                    checkOutDateInput.value = '';
+                }
+            } else {
+                const today = new Date();
+                const todayString = formatDateToYYYYMMDD(today);
+                checkOutDateInput.setAttribute('min', todayString);
+                checkOutDateInput.value = '';
+            }
+        });
+
+        document.getElementById('bookingForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            statusMessage.classList.add('bg-blue-100', 'text-blue-700');
+            statusMessage.textContent = 'Enviando sua reserva...';
+
+            const formData = new FormData(this);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            const checkInDate = new Date(data.checkInDate + 'T00:00:00');
+            const checkOutDate = new Date(data.checkOutDate + 'T00:00:00');
+
+            if (checkOutDate <= checkInDate) {
+                statusMessage.classList.remove('bg-blue-100', 'text-blue-700');
+                statusMessage.classList.add('bg-red-100', 'text-red-700');
+                statusMessage.textContent = 'Erro: A Data de Check-out deve ser posterior à Data de Check-in.';
+                return;
+            }
+
+            const webAppUrl = 'https://script.google.com/macros/s/AKfycbybeiA1uiyjot7zBtSjy0hUrQ-_vMVaZNKw1iZhmmHM998C_9eTHEext1NNsJEFSqDAwQ/exec';
+
+            try {
+                const response = await fetch(webAppUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                statusMessage.classList.remove('bg-blue-100', 'text-blue-700');
+                statusMessage.classList.add('bg-green-100', 'text-green-700');
+                statusMessage.textContent = 'Reserva enviada com sucesso! (Verifique sua planilha)';
+                this.reset();
+
+                const today = new Date();
+                const todayString = formatDateToYYYYMMDD(today);
+                checkInDateInput.setAttribute('min', todayString);
+                checkOutDateInput.setAttribute('min', todayString);
+            } catch (error) {
+                console.error('Erro ao enviar reserva:', error);
+                statusMessage.classList.remove('bg-blue-100', 'text-blue-700');
+                statusMessage.classList.add('bg-red-100', 'text-red-700');
+                statusMessage.textContent = 'Erro ao enviar reserva. Tente novamente.';
+            }
+        });
+    </script>
+</body>
+</html>
